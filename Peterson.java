@@ -16,21 +16,23 @@ class Process extends Peterson implements Runnable {
 			if(i == 0){
 				new_id = this.id; 
 			}
+			//System.out.println("new id " + new_id +" of "+this.id);
 			unlock_id_array[i] = new_id;
+			lock_id = new_id % 2;
 			if(new_id % 2 == 0){
-				lock_id = new_id % 2;
 				new_id = (new_id - 1) / 2;	
 			}else{
-				lock_id = new_id % 2;
 				new_id = new_id / 2;
 			}
 			id_array[i] = new_id;
+			System.out.println(this.id+ " Entering lock with lock id "+lock_id+" level "+ new_id);
 			locks[new_id].lock(lock_id);
 			System.out.println(this.id +" Won the round " + ++round);
 			
 			//System.out.println("New id for thread "+this.id + " is "+new_id);
 			
 		}
+
 		try {
 			System.out.println("Thread "+ id +" Entering mutex ");
 			mutex();
@@ -38,8 +40,9 @@ class Process extends Peterson implements Runnable {
 			
 			e.printStackTrace();
 		}
-		System.out.println("Thread " + id + " About to unlock "+ " Time stamp is "+ ++time_stamp);
+		//System.out.println("Thread " + id + " About to unlock "+ " Time stamp is "+ ++time_stamp);
 		System.out.println("----------------------------");
+		locks[0].flag[1] = false;
 		unlock(id_array,unlock_id_array);
 	}	
 }
@@ -50,12 +53,13 @@ public class Peterson  {
 	static int time_stamp = 0;
 	public static Peterson[] locks;
 	int level[] = new int[n];
-	boolean flag[] ;
-	int victim = 0;
+	boolean flag[];
+	int victim;
 	
 
 	public Peterson(){
 		flag = new boolean[2];
+		victim = 0;
 	}
 	
 	public void lock(int i){
@@ -64,13 +68,15 @@ public class Peterson  {
 		while(flag[1-i] && victim == i){
 			//System.out.println(flag[1-i]);
 			//No op
+			if(flag[1-i] == false)
+				break;
 		}
 		return;
 	}
 	
 	public void mutex() throws InterruptedException{
 		
-		Thread.sleep(10);
+		//thread.sleep(0);
 		// Write something
 	}
 	
@@ -81,6 +87,7 @@ public class Peterson  {
 		
 		for(int i = num_levels - 1;i >= 0;i--){
 			int id = id_array[i];	
+			//System.out.println("id array is " +id_array[i] + " "+ unlock_array[i]);
 			locks[id].flag[unlock_array[i] % 2] = false;
 		}
 		return;
@@ -111,7 +118,8 @@ public class Peterson  {
 		num_levels = base10_to_base2(); // get number of levels for the tree
 		
 		int num_locks = (int) ((Math.pow(2, num_levels))-1);
-		for(int i = 0;i <=num_locks;i++){
+		
+		for(int i = 0;i <= num_locks;i++){
 			Peterson p = new Peterson();
 			locks[i] = p;
 		}
