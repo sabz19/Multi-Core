@@ -1,0 +1,136 @@
+#!/bin/bash
+CSV_BAKERY=/home1/05129/nsab19/assignment1/results_bakery.csv
+CSV_PETERSON=/home1/05129/nsab19/assignment1/results_peterson.csv
+APPB=/home1/05129/nsab19/assignment1/app_bakery.out
+APPP=/home1/05129/nsab19/assignment1/app_peterson.out
+
+rm $CSV_BAKERY
+rm $CSV_PETERSON
+rm $APPB
+rm $APPP
+
+touch $APPP
+touch $APPB 
+touch $CSV_BAKERY
+touch $CSV_PETERSON
+
+num_crit=$1
+
+looper=0
+
+array_times=()
+array_times_peterson=()
+
+loop=1
+while [ $loop -le $num_crit ];
+do
+	array_times[$loop]=0
+	array_times_peterson[$loop]=0
+	let loop+=1
+done
+
+
+while [ $looper -lt 5 ];
+do
+	n=1
+	while [ $n -le $num_crit ]; 
+	do
+
+		java Bakery $n >>app_bakery.out 2>&1
+		let n+=1
+
+	done
+
+	n=1
+	while read line 
+	do
+	
+		line=$(echo $line | tr -s ' ')
+		p=$(echo "$line+0" | bc)
+		sum=$(echo "$p+${array_times[$n]}" | bc )
+		array_times[$n]=$sum
+		let n+=1
+		
+	done < app_bakery.out
+	rm app_bakery.out
+	touch app_bakery.out
+
+	let looper+=1
+	
+done
+
+n=1
+avg_times_bakery=()
+while [ $n -le $num_crit ];
+do
+	avg_times_bakery[$n]=$(echo "${array_times[$n]}/5" | bc)
+	let n+=1
+done 
+
+echo avg time is  ${avg_times_bakery[1]}
+n=1
+while [ $n -le $num_crit ]
+do
+
+	
+	echo $n,>>$CSV_BAKERY
+	echo ${avg_times_bakery[$n]},>>$CSV_BAKERY
+	echo >> $CSV_BAKERY
+	let n+=1
+done 
+echo ${avg_times_bakery[1]}
+
+
+looper=0
+
+loop=1
+
+while [ $looper -lt 5 ];
+do
+	n=1
+	while [ $n -le $num_crit ]; 
+	do
+
+		java Peterson $n >>app_peterson.out 2>&1 
+		let n+=1
+	done
+	n=1
+	while read line 
+	do
+		line=$(echo $line | tr -s ' ')
+		p=$(echo "$line+0" | bc)
+		sum=$(echo "$p+${array_times_peterson[$n]}" | bc )
+		array_times_peterson[$n]=$sum
+		
+		echo array is $line
+		let n+=1
+
+		
+	done < app_peterson.out
+
+	rm app_peterson.out
+	touch app_peterson.out
+	let looper+=1
+done
+
+n=1
+avg_times_peterson=()
+while [ $n -le $num_crit ];
+do
+	avg_times_peterson[$n]=$(echo "${array_times_peterson[$n]}/5" | bc)
+
+	let n+=1
+done 
+
+n=1
+while [ $n -le $num_crit ]
+do
+
+	echo $n,>>$CSV_PETERSON
+	echo ${avg_times_peterson[$n]},>>$CSV_PETERSON
+	echo >> $CSV_PETERSON
+	let n+=1
+done 
+
+
+
