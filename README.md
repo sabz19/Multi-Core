@@ -1,5 +1,5 @@
 # A comparison of Peterson and Lamport's Bakery Algorithms
-##LoneStar Cluster Compilation
+## LoneStar Cluster Compilation
 * Login to `idev` 
 * `./meta_launcher: 
 
