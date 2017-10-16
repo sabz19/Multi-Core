@@ -8,14 +8,14 @@ import org.omg.Messaging.SyncScopeHelper;
 public class Bridge {
 
 	static AtomicInteger west_count = new AtomicInteger(0),east_count = new AtomicInteger(0);
-	static int wftl = 0,eftl = 0,temp_west,temp_east,wtemp_count = 0,etemp_count = 0;
+	static int wtemp_count = 0,etemp_count = 0;
 	static int time_stamp = 0;
 	static Semaphore mutex = new Semaphore(1);
 	static Semaphore wmutex = new Semaphore(1),emutex = new Semaphore(1);
 	static Semaphore wx = new Semaphore(1), ex = new Semaphore(1);
 	static boolean wsignal = false,esignal = false,ftl_w = false,ftl_e = false;
 	/*
-	 * Enter monitor to check if a thread can enter critical section
+	 * Thread that wants to enter bridge needs to go through these three methods
 	 */ 
 	public void get_Bridge_Access(Direction direction) throws InterruptedException {
 		
@@ -66,6 +66,7 @@ public class Bridge {
 	}
 	/*
 	 * Critical Section (Vehicle passing through the bridge)
+	 * Multiple vehicles from one direction can enter the cs
 	 */
 	public void cross_Bridge(Direction direction) throws InterruptedException {
 		
@@ -81,6 +82,7 @@ public class Bridge {
 	public void leave_Bridge(Direction direction) throws InterruptedException {
 		
 		if(direction == Direction.WEST) {
+			
 			wmutex.acquire();
 			west_count.decrementAndGet();
 			wtemp_count --;
@@ -153,6 +155,7 @@ public class Bridge {
 	 * Method to generate a random direction in the bridge for a vehicle
 	 */
 	public static int seek_direction_code() {
+		
 		Random rand = new Random();
 		return rand.nextInt(2);
 	}
