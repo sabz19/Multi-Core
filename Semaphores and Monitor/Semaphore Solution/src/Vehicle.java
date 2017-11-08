@@ -1,3 +1,4 @@
+import java.io.IOException;
 
 public class Vehicle extends Bridge implements Runnable{
 
@@ -23,7 +24,12 @@ public class Vehicle extends Bridge implements Runnable{
 		 * Enter monitor to request cs access
 		 */
 		try {
-			get_Bridge_Access(direction);
+			try {
+				get_Bridge_Access(direction);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
