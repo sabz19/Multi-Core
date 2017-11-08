@@ -1,5 +1,6 @@
-import java.util.LinkedList;
-import java.util.Queue;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Random;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -7,10 +8,12 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class Bridge {
 
-	static int west_count = 0,east_count = 0,cs = 0;;
-	static Lock lock = new ReentrantLock();
+	static int west_count = 0,east_count = 0,w_waiting = 0,e_waiting = 0;
+	static Lock lock = new ReentrantLock(),file_write = new ReentrantLock();
 	static Condition west_queue = lock.newCondition(),east_queue = lock.newCondition();
-	static int time_stamp = 0;
+	static boolean wsignal = false, esignal = false;
+	static int cs_count = 0;
+	static BufferedWriter f;
 	/* 
 	 * Enter monitor to check if a thread can enter critical section
 	 */ 
@@ -36,24 +39,20 @@ public class Bridge {
 	
 	public void arrive_Bridge(Direction direction) throws InterruptedException {
 		
-
 		if(direction == Direction.EAST) {
-			east_count ++;
 			
+			e_waiting ++;
+			if(w_waiting > 0 ) {
+				return_Queue(direction).await();
+			}
+			east_count ++;
+		
 		}else {
+			w_waiting ++;
+			if(e_waiting > 0) {
+				return_Queue(direction).await();
+			}
 			west_count ++;
-		}
-		while(cs > 0) {
-			System.out.println(Thread.currentThread().getName() + " " + direction + " is waiting");
-			return_Queue(direction).await();
-			//System.out.println(Thread.currentThread().getName()+ " " + direction + " is up");
-		}
-	
-		cs ++;
-		if(direction == Direction.EAST) {
-			east_count --;
-		}else {
-			west_count --;
 		}
 	}
 	/*
@@ -61,7 +60,16 @@ public class Bridge {
 	 */
 	public void cross_Bridge(Direction direction) throws InterruptedException {
 		
-		System.out.println(time_stamp + " " + Thread.currentThread().getName() + " " + direction);
+		file_write.lock();
+		  try {
+	            f.write(direction.toString() +" "+cs_count++);
+	            f.newLine();
+	           
+	        }
+	        catch(IOException e) {
+	           System.out.println("Something went wrong with write");
+	        }
+		file_write.unlock();
 		Thread.sleep(250);
 	}
 	/*
@@ -69,23 +77,34 @@ public class Bridge {
 	 */
 	public void leave_Bridge(Direction direction) {
 		
-
-		cs --;
-		
 		if(direction == Direction.EAST) {
-		
-			if(west_count > 0) {
-				west_queue.signal();
+			east_count --;
+			e_waiting --;
+			if(w_waiting > 0) {
+
+				if(east_count == 0 ) {
+					cs_count = 0;
+					west_queue.signal();
+				}
 			}else {
-				east_queue.signal();
+				if(e_waiting > 0) {
+					east_queue.signalAll();
+				}
 			}
 		}
 		else if(direction == Direction.WEST){
-		
-			if(east_count > 0) {
-				east_queue.signal();
+			west_count --;
+			w_waiting --;
+			if(e_waiting > 0) {
+
+				if(west_count == 0 ) {
+					cs_count = 0;
+					east_queue.signal();
+				}
 			}else {
-				west_queue.signal();
+				if(w_waiting > 0) {
+					west_queue.signalAll();
+				}
 			}
 		}
 	}
@@ -99,14 +118,7 @@ public class Bridge {
 		else 
 			return west_queue;
 	}
-	public int return_Count(Direction direction) {
-		
-		if(direction == Direction.EAST) {
-			return east_count;
-		}else {
-			return west_count;
-		}
-	}
+	
 	/*
 	 * Randomly choose time for a cs request
 	 */
@@ -127,7 +139,7 @@ public class Bridge {
 	public static void main(String[] args) throws Exception {
 		
 		int num_vehicles = 10;
-		
+		f = new BufferedWriter(new FileWriter("critical.txt"));
 		Thread[] thread = new Thread[num_vehicles];
 		//i is assigned as the number plate value for a vehicle
 		for(int i = 0;i < num_vehicles;i++) {
@@ -137,6 +149,7 @@ public class Bridge {
 		for(int i = 0;i < num_vehicles;i++) {
 			thread[i].join();
 		}
+		f.close();
 		
 	}
 

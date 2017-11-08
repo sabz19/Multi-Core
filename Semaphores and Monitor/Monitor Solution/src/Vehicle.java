@@ -22,13 +22,12 @@ public class Vehicle extends Bridge implements Runnable{
 		/*
 		 * Enter monitor to request cs access
 		 */
-		System.out.println(" I am thread "+ number_plate +" I am about to request access");
 		try {
 			get_Bridge_Access(direction);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		System.out.println("I am thread" + number_plate + " I am done crossing");
+		
 		
 	}
 	
